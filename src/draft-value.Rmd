@@ -7,7 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list = ls())
-knitr::opts_knit$set(root.dir = "~/Documents/fantasy-football/data")
+#knitr::opts_knit$set(root.dir = "~/Documents/fantasy-football/data")
+knitr::opts_knit$set(root.dir = "C:/Users/bkram/Cloudstation/NFL/fantasy-football/data")
 ```
 ```{r, include=FALSE}
 #loading packages
@@ -15,93 +16,102 @@ for (pkg in c("tidyverse", "tidytext", "reshape2",
               "ggplot2")) {library(pkg, character.only = TRUE)}
 # pulling the data 
 raw_data <- read_csv("sim-data.csv") 
+pfr_pre2020_stats <- read_csv("pfr-pre2020-stats.csv")
 `%notin%` <- Negate(`%in%`)
+
+# list duplicates 
+#$Player[duplicated(raw_data$Player)]
+
+# bring in age_data 
+age <- pfr_pre2020_stats %>% 
+  select(Player, Age, Team, Games) %>% 
+  rename(TeamPFR = Team)
+
+raw_data <- raw_data %>% 
+  filter(!duplicated(Player)) %>% 
+  #full_join(age, by = c("Player", "Team")) %>% 
+  full_join(age, by = "Player") %>% 
+  rename(fppg = `FP/G`) %>% 
+  select(Player, Team, Position, Rk, Age, FPts, fppg, Status)
 ```
 
 # BEST OVERALL RANKINGS 
 
 ```{r top_ranking_QBs }
 raw_data %>% 
-  rename(fppg = `FP/G`) %>%
-  filter(Position == "RB" | Position == "WR") %>% 
-  arrange(Rk)
+  filter(Position == "QB" & Status == "FA") %>% 
+  arrange(-fppg)
 ```
 ```{r top_ranking_RBs }
 raw_data %>% 
-  rename(fppg = `FP/G`) %>%
-  filter(Position == "RB") %>% 
+  filter(Position == "RB" | Position == "WR" | Position == "TE") %>% 
+  filter(Status == "FA") %>% 
   arrange(-fppg)
 ```
 ```{r top_rankings_WRs }
 raw_data %>% 
-  rename(fppg = `FP/G`) %>%
-  filter(Position == "WR") %>% 
+  filter(Position == "WR" & Status == "FA") %>% 
   arrange(-fppg)
 ```
 
 ## BEST AVAILABLE (REMOVES DRAFTED PLAYERS AT POSITION, FILTERS TOP-10 FOR POSITION)
 
 ```{r best_av_qb}
-drafted_QBs <- "Lamar Jackson|Deshaun Watson|Dak Prescott|Patrick Mahomes|Kyler Murray|Russell Wilson|Aaron Rodgers|Daniel Jones|Carson Wentz"
+drafted_QBs <- "Lamar Jackson"
 best_av_qb <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(Position == "QB" & FPts > 70) %>% 
   filter(Status == "FA") %>% 
   filter(!grepl(drafted_QBs, Player)) %>% 
-  top_n(10, fppg) %>% 
+  top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_qb$FPts); sd(best_av_qb$FPts)   
 mean(best_av_qb$fppg); sd(best_av_qb$fppg); best_av_qb 
-```
+#```
 
-```{r best_av_rb}
+#```{r best_av_rb}
 drafted_RBs <- "Christian McCaffrey|Saquon Barkley|Ezekiel Elliott|Dalvin Cook|Josh Jacobs|Derrick Henry|Alvin Kamara|Joe Mixon|Nick Chubb|Aaron Jones|Austin Ekeler|Miles Sanders|Leonard Fournette|Marlon Mack"
 best_av_rb <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(Position == "RB" & FPts > 70) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_RBs, Player)) %>% 
-  #top_n(10, fppg) %>% 
+  top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_rb$FPts); sd(best_av_rb$FPts)   
 mean(best_av_rb$fppg); sd(best_av_rb$fppg); best_av_rb   
-```
-```{r best_av_wr}
+#```
+#```{r best_av_wr}
 drafted_WRs <- "Michael Thomas|DeAndre Hopkins|Tyreek Hill|Chris Godwin|Cooper Kupp|Davante Adams|Stefon Diggs|Odell Beckham Jr.|Mike Evans|DJ Moore|Amari Cooper|Kenny Golladay"
 best_av_wr <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(Position == "WR" & FPts > 20) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_WRs, Player)) %>% 
-  #top_n(10, fppg) %>% 
+  top_n(20, fppg) %>% 
   arrange(-fppg)
 mean(best_av_wr$FPts); sd(best_av_wr$FPts)   
 mean(best_av_wr$fppg); sd(best_av_wr$fppg); best_av_wr   
-```
-```{r best_av_te}
+#```
+#```{r best_av_te}
 drafted_TEs <- "George Kittle"
 best_av_te <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(Position == "TE") %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_TEs, Player)) %>% 
-  top_n(10, fppg) %>%
+  top_n(20, fppg) %>%
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_te$FPts); sd(best_av_te$FPts)   
 mean(best_av_te$fppg); sd(best_av_te$fppg); best_av_te   
-```
-```{r best_av_def}
+#```
+#```{r best_av_def}
 defensive_positions <- "DT|DE|LB|CB"
 drafted_DEF <- "No Names Yet"
 best_av_def <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(grepl(defensive_positions, Position)) %>% 
-  #filter(Status == "FA") %>%
+  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
   filter(!grepl(drafted_DEF, Player)) %>% 
-  top_n(10, fppg) %>% 
+  top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_def$FPts); sd(best_av_def$FPts)   
@@ -109,58 +119,68 @@ mean(best_av_def$fppg); sd(best_av_def$fppg); best_av_def
 
 drafted_LB <- "No Names Yet"
 best_av_lb <- raw_data %>% 
-  rename(fppg = `FP/G`) %>% filter(Position == "LB") %>%
-  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
-  filter(!grepl(drafted_LB, Player)) %>% top_n(10, FPts) %>% #top_n(10, FPts) %>% 
+  filter(grepl("LB", Position)) %>%
+  #filter(grepl(defensive_positions, Position)) %>%
+  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  #filter(!grepl(drafted_LB, Player)) %>% 
+  top_n(20, FPts) %>% 
+  #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_lb$FPts); sd(best_av_lb$FPts)   
 mean(best_av_lb$fppg); sd(best_av_lb$fppg); best_av_lb
 
 drafted_CB <- "No Names Yet"
 best_av_cb <- raw_data %>% 
-  rename(fppg = `FP/G`) %>% filter(Position == "CB") %>%
-  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
-  filter(!grepl(drafted_CB, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  filter(grepl("CB", Position)) %>%
+  #filter(grepl(defensive_positions, Position)) %>% 
+  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(!grepl(drafted_CB, Player)) %>% 
+  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_cb$FPts); sd(best_av_cb$FPts)   
 mean(best_av_cb$fppg); sd(best_av_cb$fppg); best_av_cb
 
 drafted_S <- "No Names Yet"
 best_av_sfty <- raw_data %>% 
-  rename(fppg = `FP/G`) %>% filter(Position == "S") %>%
-  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
-  filter(!grepl(drafted_S, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  filter(grepl("S", Position)) %>%
+  #filter(grepl(defensive_positions, Position)) %>% 
+  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(!grepl(drafted_S, Player)) %>% 
+  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_sfty$FPts); sd(best_av_sfty$FPts)   
 mean(best_av_sfty$fppg); sd(best_av_sfty$fppg); best_av_sfty
 
 drafted_DE <- "No Names Yet"
 best_av_de <- raw_data %>% 
-  rename(fppg = `FP/G`) %>% filter(Position == "DE") %>%
-  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
-  filter(!grepl(drafted_DE, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  filter(grepl("DE", Position)) %>%
+  #filter(grepl(defensive_positions, Position)) %>% 
+  filter(Status == "FA"| Status == "W (Wed)" | Status == "SF") %>%
+  filter(!grepl(drafted_DE, Player)) %>% 
+  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_de$FPts); sd(best_av_de$FPts)   
 mean(best_av_de$fppg); sd(best_av_de$fppg); best_av_de
 
 drafted_DT <- "No Names Yet"
 best_av_dt <- raw_data %>% 
-  rename(fppg = `FP/G`) %>% filter(Position == "DT") %>%
-  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
-  filter(!grepl(drafted_DT, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  filter(grepl("DT", Position)) %>%
+  #filter(grepl(defensive_positions, Position)) %>% 
+  filter(Status == "FA"| Status == "W (Wed)" | Status == "SF") %>%
+  filter(!grepl(drafted_DT, Player)) %>% 
+  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_dt$FPts); sd(best_av_dt$FPts)   
 mean(best_av_dt$fppg); sd(best_av_dt$fppg); best_av_dt
 
-```
-```{r best_av_kkr}
+#```
+#```{r best_av_kkr}
 drafted_Kkrs <- "No Names Yet"
 best_av_kkr <- raw_data %>% 
-  rename(fppg = `FP/G`) %>%
   filter(Position == "K" & FPts > 100) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_Kkrs, Player)) %>% 
-  top_n(10, fppg) %>% 
+  top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_kkr$FPts); sd(best_av_kkr$FPts)   
@@ -232,7 +252,7 @@ for_heatmap <- for_heatmap %>%
          fptsSD_norm = (fptsSD_norm-min(fptsSD_norm))/(max(fptsSD_norm)-min(fptsSD_norm)),
          fppg_norm = (fppg_norm-min(fppg_norm))/(max(fppg_norm)-min(fppg_norm)),
          ffpgSD_norm = (ffpgSD_norm-min(ffpgSD_norm))/(max(ffpgSD_norm)-min(ffpgSD_norm))
-         )
+         ) %>% filter(position != "DEF")
 
 for_heatmap$position <- with(for_heatmap, reorder(position, fppg_norm))
 for_heatmap <- for_heatmap %>% 
@@ -244,7 +264,7 @@ melt(for_heatmap) %>%
          geom_tile(aes(fill=value)) + theme_minimal() +
   scale_fill_gradient(low = "steel blue", high = "orange") +  
   labs(title = "Available Value by Position ",
-       subtitle = "For Next Best 10 Players by Position (Lighter Color = More Value)") +
+       subtitle = "(Lighter Color = More Value)") +
   theme(plot.title = element_text(size=14, hjust = 0.5, face = "bold"),
         plot.subtitle = element_text(size=10, hjust = 0.5),
                           axis.title.x = element_blank(),
