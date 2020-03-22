@@ -1,0 +1,384 @@
+---
+title: "NFL Sim Draft Value"
+author: "Brandon"
+date: "3/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_knit$set(root.dir = "~/Documents/fantasy-football/data")
+```
+```{r, include=FALSE}
+#loading packages
+for (pkg in c("tidyverse", "tidytext", "reshape2", 
+              "ggplot2")) {library(pkg, character.only = TRUE)}
+# pulling the data 
+raw_data <- read_csv("sim-data.csv") 
+`%notin%` <- Negate(`%in%`)
+```
+
+# BEST OVERALL RANKINGS 
+
+```{r top_ranking_QBs }
+raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "RB" | Position == "WR") %>% 
+  arrange(Rk)
+```
+```{r top_ranking_RBs }
+raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "RB") %>% 
+  arrange(-fppg)
+```
+```{r top_rankings_WRs }
+raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "WR") %>% 
+  arrange(-fppg)
+```
+
+## BEST AVAILABLE (REMOVES DRAFTED PLAYERS AT POSITION, FILTERS TOP-10 FOR POSITION)
+
+```{r best_av_qb}
+drafted_QBs <- "Lamar Jackson|Deshaun Watson|Dak Prescott|Patrick Mahomes|Kyler Murray|Russell Wilson|Aaron Rodgers|Daniel Jones|Carson Wentz"
+best_av_qb <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "QB" & FPts > 70) %>% 
+  filter(Status == "FA") %>% 
+  filter(!grepl(drafted_QBs, Player)) %>% 
+  top_n(10, fppg) %>% 
+  #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_qb$FPts); sd(best_av_qb$FPts)   
+mean(best_av_qb$fppg); sd(best_av_qb$fppg); best_av_qb 
+```
+
+```{r best_av_rb}
+drafted_RBs <- "Christian McCaffrey|Saquon Barkley|Ezekiel Elliott|Dalvin Cook|Josh Jacobs|Derrick Henry|Alvin Kamara|Joe Mixon|Nick Chubb|Aaron Jones|Austin Ekeler|Miles Sanders|Leonard Fournette|Marlon Mack"
+best_av_rb <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "RB" & FPts > 70) %>% 
+  filter(Status == "FA") %>%
+  filter(!grepl(drafted_RBs, Player)) %>% 
+  #top_n(10, fppg) %>% 
+  #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_rb$FPts); sd(best_av_rb$FPts)   
+mean(best_av_rb$fppg); sd(best_av_rb$fppg); best_av_rb   
+```
+```{r best_av_wr}
+drafted_WRs <- "Michael Thomas|DeAndre Hopkins|Tyreek Hill|Chris Godwin|Cooper Kupp|Davante Adams|Stefon Diggs|Odell Beckham Jr.|Mike Evans|DJ Moore|Amari Cooper|Kenny Golladay"
+best_av_wr <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "WR" & FPts > 20) %>% 
+  filter(Status == "FA") %>%
+  filter(!grepl(drafted_WRs, Player)) %>% 
+  #top_n(10, fppg) %>% 
+  arrange(-fppg)
+mean(best_av_wr$FPts); sd(best_av_wr$FPts)   
+mean(best_av_wr$fppg); sd(best_av_wr$fppg); best_av_wr   
+```
+```{r best_av_te}
+drafted_TEs <- "George Kittle"
+best_av_te <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "TE") %>% 
+  filter(Status == "FA") %>%
+  filter(!grepl(drafted_TEs, Player)) %>% 
+  top_n(10, fppg) %>%
+  #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_te$FPts); sd(best_av_te$FPts)   
+mean(best_av_te$fppg); sd(best_av_te$fppg); best_av_te   
+```
+```{r best_av_def}
+defensive_positions <- "DT|DE|LB|CB"
+drafted_DEF <- "No Names Yet"
+best_av_def <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(grepl(defensive_positions, Position)) %>% 
+  #filter(Status == "FA") %>%
+  filter(!grepl(drafted_DEF, Player)) %>% 
+  top_n(10, fppg) %>% 
+  #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_def$FPts); sd(best_av_def$FPts)   
+mean(best_av_def$fppg); sd(best_av_def$fppg); best_av_def
+
+drafted_LB <- "No Names Yet"
+best_av_lb <- raw_data %>% 
+  rename(fppg = `FP/G`) %>% filter(Position == "LB") %>%
+  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
+  filter(!grepl(drafted_LB, Player)) %>% top_n(10, FPts) %>% #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_lb$FPts); sd(best_av_lb$FPts)   
+mean(best_av_lb$fppg); sd(best_av_lb$fppg); best_av_lb
+
+drafted_CB <- "No Names Yet"
+best_av_cb <- raw_data %>% 
+  rename(fppg = `FP/G`) %>% filter(Position == "CB") %>%
+  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
+  filter(!grepl(drafted_CB, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_cb$FPts); sd(best_av_cb$FPts)   
+mean(best_av_cb$fppg); sd(best_av_cb$fppg); best_av_cb
+
+drafted_S <- "No Names Yet"
+best_av_sfty <- raw_data %>% 
+  rename(fppg = `FP/G`) %>% filter(Position == "S") %>%
+  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
+  filter(!grepl(drafted_S, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_sfty$FPts); sd(best_av_sfty$FPts)   
+mean(best_av_sfty$fppg); sd(best_av_sfty$fppg); best_av_sfty
+
+drafted_DE <- "No Names Yet"
+best_av_de <- raw_data %>% 
+  rename(fppg = `FP/G`) %>% filter(Position == "DE") %>%
+  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
+  filter(!grepl(drafted_DE, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_de$FPts); sd(best_av_de$FPts)   
+mean(best_av_de$fppg); sd(best_av_de$fppg); best_av_de
+
+drafted_DT <- "No Names Yet"
+best_av_dt <- raw_data %>% 
+  rename(fppg = `FP/G`) %>% filter(Position == "DT") %>%
+  #filter(grepl(defensive_positions, Position)) %>% #filter(Status == "FA") %>%
+  filter(!grepl(drafted_DT, Player)) %>% top_n(10, fppg) %>% #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_dt$FPts); sd(best_av_dt$FPts)   
+mean(best_av_dt$fppg); sd(best_av_dt$fppg); best_av_dt
+
+```
+```{r best_av_kkr}
+drafted_Kkrs <- "No Names Yet"
+best_av_kkr <- raw_data %>% 
+  rename(fppg = `FP/G`) %>%
+  filter(Position == "K" & FPts > 100) %>% 
+  filter(Status == "FA") %>%
+  filter(!grepl(drafted_Kkrs, Player)) %>% 
+  top_n(10, fppg) %>% 
+  #top_n(10, FPts) %>% 
+  arrange(-fppg)
+mean(best_av_kkr$FPts); sd(best_av_kkr$FPts)   
+mean(best_av_kkr$fppg); sd(best_av_kkr$fppg); best_av_kkr   
+```
+
+```{r best_available_sum, results = 'asis' }
+best_available_sum <- as_tibble(data.frame(
+  "position" = c("QB", "RB", "WR", "TE", "K", "DEF", "LB", "CB", "S", "DE", "DT"),
+  "fpts" = c(mean(best_av_qb$FPts), mean(best_av_rb$FPts), 
+             mean(best_av_wr$FPts), mean(best_av_te$FPts), 
+             mean(best_av_kkr$FPts),
+             mean(best_av_def$FPts), mean(best_av_lb$FPts), 
+             mean(best_av_cb$FPts), mean(best_av_sfty$FPts), 
+             mean(best_av_de$FPts), mean(best_av_dt$FPts)), 
+  "fptsSD" = c(sd(best_av_qb$FPts), sd(best_av_rb$FPts), 
+               sd(best_av_wr$FPts), sd(best_av_te$FPts), 
+               sd(best_av_kkr$FPts),
+               sd(best_av_def$FPts), sd(best_av_lb$FPts),
+               sd(best_av_cb$FPts), sd(best_av_sfty$FPts),
+               sd(best_av_de$FPts), sd(best_av_dt$FPts)),
+  "fppg" = c(mean(best_av_qb$fppg), mean(best_av_rb$fppg), 
+             mean(best_av_wr$fppg), mean(best_av_te$fppg), 
+             mean(best_av_kkr$fppg),
+             mean(best_av_def$fppg), mean(best_av_lb$fppg),
+             mean(best_av_cb$fppg), mean(best_av_sfty$fppg),
+             mean(best_av_de$fppg), mean(best_av_dt$fppg)),
+  "ffpgSD" = c(sd(best_av_qb$fppg), sd(best_av_rb$fppg), 
+               sd(best_av_wr$fppg), sd(best_av_te$fppg), 
+               sd(best_av_kkr$fppg),
+               sd(best_av_def$fppg), sd(best_av_lb$fppg),
+               sd(best_av_cb$fppg), sd(best_av_sfty$fppg),
+               sd(best_av_de$fppg), sd(best_av_dt$fppg))))
+best_available_sum %>% arrange(-fppg) 
+```
+This table shows the mean and SD values for the top-10 available positions. The higher the mean, the higher overall contribution that the position will give at this point in the draft. The higher SD, the more potential value is available at the position. This latter claim is based on the assumption that the more variance there is, the more important drafting the position right now is. 
+
+```{r}
+for_heatmap <- data.frame(
+  "position" = c("QB", "RB", "WR", "TE", "K", "DEF", "LB", "CB", "S", "DE", "DT"),
+  "fpts" = c(mean(best_av_qb$FPts), mean(best_av_rb$FPts), 
+             mean(best_av_wr$FPts), mean(best_av_te$FPts), 
+             mean(best_av_kkr$FPts),
+             mean(best_av_def$FPts), mean(best_av_lb$FPts), 
+             mean(best_av_cb$FPts), mean(best_av_sfty$FPts), 
+             mean(best_av_de$FPts), mean(best_av_dt$FPts)), 
+  "fptsSD" = c(sd(best_av_qb$FPts), sd(best_av_rb$FPts), 
+               sd(best_av_wr$FPts), sd(best_av_te$FPts), 
+               sd(best_av_kkr$FPts),
+               sd(best_av_def$FPts), sd(best_av_lb$FPts),
+               sd(best_av_cb$FPts), sd(best_av_sfty$FPts),
+               sd(best_av_de$FPts), sd(best_av_dt$FPts)),
+  "fppg" = c(mean(best_av_qb$fppg), mean(best_av_rb$fppg), 
+             mean(best_av_wr$fppg), mean(best_av_te$fppg), 
+             mean(best_av_kkr$fppg),
+             mean(best_av_def$fppg), mean(best_av_lb$fppg),
+             mean(best_av_cb$fppg), mean(best_av_sfty$fppg),
+             mean(best_av_de$fppg), mean(best_av_dt$fppg)),
+  "ffpgSD" = c(sd(best_av_qb$fppg), sd(best_av_rb$fppg), 
+               sd(best_av_wr$fppg), sd(best_av_te$fppg), 
+               sd(best_av_kkr$fppg),
+               sd(best_av_def$fppg), sd(best_av_lb$fppg),
+               sd(best_av_cb$fppg), sd(best_av_sfty$fppg),
+               sd(best_av_de$fppg), sd(best_av_dt$fppg))) 
+for_heatmap <- for_heatmap %>% 
+  mutate(fpts_norm = fpts, fptsSD_norm = fptsSD, fppg_norm = fppg, ffpgSD_norm = ffpgSD) %>% 
+  mutate_at(scale, .vars = vars(c("fpts_norm", "fptsSD_norm", "fppg_norm", "ffpgSD_norm"))) %>% 
+  mutate(fpts_norm = (fpts_norm-min(fpts_norm))/(max(fpts_norm)-min(fpts_norm)),
+         fptsSD_norm = (fptsSD_norm-min(fptsSD_norm))/(max(fptsSD_norm)-min(fptsSD_norm)),
+         fppg_norm = (fppg_norm-min(fppg_norm))/(max(fppg_norm)-min(fppg_norm)),
+         ffpgSD_norm = (ffpgSD_norm-min(ffpgSD_norm))/(max(ffpgSD_norm)-min(ffpgSD_norm))
+         )
+
+for_heatmap$position <- with(for_heatmap, reorder(position, fppg_norm))
+for_heatmap <- for_heatmap %>% 
+  select(-fpts, -fptsSD, -fppg, -ffpgSD)  
+  #select(-fpts_norm, -fptsSD_norm, -fppg_norm, -ffpgSD_norm)
+
+melt(for_heatmap) %>% 
+  ggplot(aes(variable, position)) + 
+         geom_tile(aes(fill=value)) + theme_minimal() +
+  scale_fill_gradient(low = "steel blue", high = "orange") +  
+  labs(title = "Available Value by Position ",
+       subtitle = "For Next Best 10 Players by Position (Lighter Color = More Value)") +
+  theme(plot.title = element_text(size=14, hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(size=10, hjust = 0.5),
+                          axis.title.x = element_blank(),
+                          axis.title.y = element_blank()) 
+```
+
+# EXISTING VALUE CALCULATORS 
+
+```{r}
+# contracts 
+paid15m <- c("Patrick Mahomes|Christian McCaffrey|Lamar Jackson|Saquon Barkley|Michael Thomas|DeAndre Hopkins|Ezekiel Elliott|Deshaun Watson")
+paid14m <- c("Alvin Kamara|Dalvin Cook|Kyler Murray|Dak Prescott|Josh Allen|Josh Jacobs|Derrick Henry|Joe Mixon")
+paid13m <- c("Nick Chubb|Tyreek Hill|Aaron Jones|Chris Godwin|Russell Wilson|Cooper Kupp|Davante Adams")
+paid12m <- c("Aaron Rodgers|Austin Ekeler|George Kittle")
+paid11m <- c("zczyzcz")
+paid10m <- c("zczyzcz")
+paid9m <- c("zczyzcz")
+paid8m <- c("zczyzcz")
+paid7m <- c("zczyzcz")
+paid6m <- c("zczyzcz")
+paid5m <- c("zczyzcz")
+paid4m <- c("zczyzcz")
+paid3m <- c("zczyzcz")
+paid2m <- c("zczyzcz")
+paid1m <- c("zczyzcz")
+
+value_matrix <- raw_data %>% 
+  rename(player = Player, ttl_fpts = FPts, fppg = `FP/G`, 
+         rank = Rk, position = Position) %>% 
+  select(rank, player, ttl_fpts, fppg) %>% 
+  # apply contract totals 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid15m), yes = "15", no = NA)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid14m), yes = "14", no = contract)) %>%
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid13m), yes = "13", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid12m), yes = "12", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid11m), yes = "11", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid10m), yes = "10", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid9m), yes = "9", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid8m), yes = "8", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid7m), yes = "7", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid6m), yes = "6", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid5m), yes = "5", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid4m), yes = "4", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid3m), yes = "3", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid2m), yes = "2", no = contract)) %>% 
+  mutate(contract = ifelse(test = str_detect(string = player, 
+                     pattern = paid1m), yes = "1", no = contract)) %>% 
+  mutate(contract = as.numeric(contract)) %>% 
+  # apply value totals 
+  mutate(fppg_value = round(fppg / contract, 3), 
+         ttl_fpts_value = round(ttl_fpts / contract, 3)) %>% 
+  # standardize values 
+  drop_na(fppg_value) %>% 
+  #mutate_at(scale, .vars = vars(c("fppg_value"))) %>%
+  mutate(fppg_norm = round((fppg_value-min(fppg_value))/(max(fppg_value)-min(fppg_value)), 3)) %>% 
+  mutate(ttl_fpts_norm = 
+  round((ttl_fpts_value-min(ttl_fpts_value))/(max(ttl_fpts_value)-min(ttl_fpts_value)), 3)) %>% 
+  select(-contract) %>% 
+  filter(rank < 400) %>%
+  arrange(-fppg_value); value_matrix
+  #arrange(-ttl_fpts_value); value_matrix
+```
+
+```{r}
+drafted_players <- unlist(str_split(c(drafted_QBs, drafted_RBs, drafted_WRs, drafted_TEs, drafted_Kkrs, 
+                     drafted_CB, drafted_DE, drafted_DT, drafted_LB, drafted_S), "\\|"))
+
+ggplot(melt(value_matrix %>%
+              mutate(player = reorder(player, fppg_norm)) %>%
+              #top_n(30) %>% 
+              #filter(player %in% drafted_players) %>% 
+              #filter(player != drafted_players) %>%
+              #filter(rank < 50) %>% 
+              select(player, fppg_norm, ttl_fpts_norm)), 
+       aes(variable, player, fill= value)) + geom_tile() +
+  theme_minimal() +
+  labs(title = "Best Player Value (FFPG/Contract)") +
+  scale_fill_gradient(low = "steel blue", high = "orange") +
+  theme(plot.title = element_text(size=14, hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(size=10, hjust = 0.5),
+                          axis.title.x = element_blank(),
+                          axis.title.y = element_blank()) 
+```
+
+```{r}
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+# create a value matrix
+value_matrix <- raw_data %>% 
+  rename(player = Player, tfpts = FPts, fppg = `FP/G`, 
+         rank = Rk, position = Position) %>% 
+  select(rank, player, tfpts, fppg) %>% 
+  mutate(p1_8 = fppg / 15) %>% mutate(p9_16 = fppg / 14) %>% 
+  mutate(p17_24 = fppg / 13) %>% mutate(p25_32 = fppg / 12) %>% 
+  mutate(p33_40 = fppg / 12) %>% mutate(p41_48 = fppg / 11) %>% 
+  mutate(p49_56 = fppg / 10) %>% mutate(p57_64 = fppg / 9) %>% 
+  mutate(rd3 = fppg / 9) %>% mutate(rd4 = fppg / 8) %>% 
+  mutate(rd5 = fppg / 7) %>% mutate(rd6 = fppg / 6) %>% 
+  mutate(rd7 = fppg / 5) %>% mutate(rd8 = fppg / 4) %>% 
+  mutate(rd9 = fppg / 4) %>% mutate(rd10 = fppg / 3.5) %>% 
+  mutate(rd11 = fppg / 3) %>% mutate(rd12 = fppg / 3) %>% 
+  mutate(rd13 = fppg / 3) %>% mutate(rd14 = fppg / 3) %>% 
+  mutate(rd15 = fppg / 3) %>% mutate(rd16 = fppg / 2) %>%
+  mutate(rd17 = fppg / 2) %>% mutate(rd18 = fppg / 2) %>%
+  mutate(rd19 = fppg / 2) %>% mutate(rd20 = fppg / 2) %>%
+  mutate(rd21 = fppg / 1) %>% mutate(rd22 = fppg / 1) %>%
+  mutate(rd23 = fppg / 1) %>% mutate(rd24 = fppg / 1) %>%
+  mutate(rd25 = fppg / 1) %>% mutate(rd26 = fppg / 1) %>%
+  mutate(rd27 = fppg / 1) %>% mutate(rd28 = fppg / 1) %>%
+  mutate(rd29 = fppg / 1) %>% mutate(rd30 = fppg / 1) %>%
+  mutate(rd31 = fppg / 1) %>% mutate(rd32 = fppg / 1) 
+value_matrix
+```
