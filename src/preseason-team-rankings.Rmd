@@ -1,0 +1,43 @@
+---
+title: "Preseason Team Rankings"
+author: "Brandon"
+date: "9/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading packages
+for (pkg in c("tidyverse", "tidytext", "reshape2", "plotly",
+              "ggplot2")) {library(pkg, character.only = TRUE)}
+# pulling the data 
+raw_data <- read_csv("/Users/Brandon/Documents/fantasy-football/data/Fantrax-Players-NFL Sim Dynasty - Start_2020.csv") 
+
+cleaned_data <- raw_data %>% 
+  rename(player = Player, 
+         sim_team = Status,
+         fppg = `FP/G`, 
+         position = Position,
+         irl_team = Team,
+         age = Age, 
+         bye = Bye)
+```
+
+```{r, fig.width=11}
+preseason <- cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") %>% 
+  group_by(sim_team) %>% 
+  summarize(total = sum(fppg)) %>% 
+  arrange(-total) %>% 
+  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
+  geom_bar(colour="black", fill="white", stat="identity") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank()) 
+```
+
+```{r}
+
+```

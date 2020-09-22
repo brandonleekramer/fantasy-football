@@ -1,0 +1,123 @@
+---
+title: "In-Season Value"
+author: "Brandon"
+date: "9/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+#loading packages
+for (pkg in c("tidyverse", "tidytext", "reshape2", "plotly", "dplyr", "RecordLinkage",
+              "ggplot2")) {library(pkg, character.only = TRUE)}
+# pulling the data 
+raw_data <- read_csv("/Users/Brandon/Documents/fantasy-football/data/Fantrax-Players-NFL Sim Dynasty .csv") 
+sim_contracts <- read_csv("/Users/Brandon/Documents/fantasy-football/data/nflsim-contracts.csv") %>% 
+  mutate(name = tolower(name),
+         name = trimws(name, which = "both"),
+         y2020 = as.integer(y2020),
+         y2021 = as.integer(y2021),
+         y2022 = as.integer(y2022),
+         y2023 = as.integer(y2023),
+         y2024 = as.integer(y2024),
+         y2025 = as.integer(y2025)) %>% 
+  rename(player = name) %>% 
+  select(-sim_team)
+
+cleaned_data <- raw_data %>% 
+  mutate(Player = trimws(Player, which = "both"),
+         Player = tolower(Player)) %>% 
+  rename(player = Player, 
+         sim_team = Status,
+         fppg = `FP/G`, 
+         position = Position,
+         irl_team = Team,
+         age = Age, 
+         bye = Bye)
+
+cleaned_data <- cleaned_data %>% 
+  full_join(sim_contracts, by = "player") %>% 
+  mutate(y2020_value = round(fppg/y2020 * 1000000, 4))
+```
+
+```{r}
+cleaned_data %>% 
+  filter(is.na(y2020) & sim_team != "FA" & sim_team != "W (Wed)" & sim_team != "(N/A)")
+```
+
+```{r, fig.width=8}
+cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") %>% 
+  group_by(sim_team) %>% 
+  summarize(total = sum(fppg)) %>% 
+  arrange(-total) %>% 
+  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
+  geom_bar(colour="black", fill="white", stat="identity") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank())
+```
+```{r, fig.width=8}
+top_players <- cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
+
+top_players %>% 
+  filter(sim_team == "JAX")
+  
+
+
+#  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
+#  geom_bar(colour="black", fill="white", stat="identity") +
+#  theme_minimal() +
+#  theme(axis.title.x = element_blank())
+```
+
+```{r players_value_rankings}
+mean(na.omit(cleaned_data$y2020_value))
+
+cleaned_data %>% 
+  select(player, sim_team, position, age, fppg, bye, y2020, y2020_value) %>%
+  arrange(-y2020_value)
+```
+
+```{r value_among_tanking_teams}
+tanking_teams <- "WAS|GBP|MIN|SF"
+
+cleaned_data %>% 
+  filter(grepl(tanking_teams, sim_team) & 
+         #position == "LB" & # position filter 
+         fppg > 8 &         # points filter
+         age > 23           # age filter
+         ) %>% 
+  select(player, sim_team, position, age, fppg, bye, y2020, y2020_value, y2021, y2022) %>% 
+  arrange(-y2020_value)
+```
+
+```{r value_among_statistically_worst_teams}
+worst_teams <- cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") %>% 
+  group_by(sim_team) %>% 
+  summarize(total = sum(fppg)) %>% 
+  arrange(-total) %>% 
+  filter(total < mean(total))
+worst_teams <- paste(c("\\b(?i)(zq3", na.omit(worst_teams$sim_team), "zq3)\\b"), collapse = "|")
+
+cleaned_data %>% 
+  filter(grepl(worst_teams, sim_team) & 
+         position == "LB" & # position filter 
+         fppg > 8 &         # points filter
+         age > 23           # age filter
+         ) %>% 
+  select(player, sim_team, position, age, fppg, bye, y2020, y2020_value, y2021) %>% 
+  arrange(-y2020_value)
+```
+
+
+
+
+
+
+

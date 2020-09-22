@@ -1,14 +1,13 @@
 ---
 title: "NFL Sim Draft Value"
 author: "Brandon"
-date: "3/19/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 rm(list = ls())
-#knitr::opts_knit$set(root.dir = "~/Documents/fantasy-football/data")
-knitr::opts_knit$set(root.dir = "C:/Users/bkram/Cloudstation/NFL/fantasy-football/data")
+knitr::opts_knit$set(root.dir = "~/Documents/fantasy-football/data")
+#knitr::opts_knit$set(root.dir = "C:/Users/bkram/Cloudstation/NFL/fantasy-football/data")
 ```
 ```{r, include=FALSE}
 #loading packages
@@ -16,23 +15,24 @@ for (pkg in c("tidyverse", "tidytext", "reshape2",
               "ggplot2")) {library(pkg, character.only = TRUE)}
 # pulling the data 
 raw_data <- read_csv("sim-data.csv") 
-pfr_pre2020_stats <- read_csv("pfr-pre2020-stats.csv")
+#pfr_pre2020_stats <- read_csv("pfr-pre2020-stats.csv")
 `%notin%` <- Negate(`%in%`)
 
 # list duplicates 
 #$Player[duplicated(raw_data$Player)]
 
 # bring in age_data 
-age <- pfr_pre2020_stats %>% 
-  select(Player, Age, Team, Games) %>% 
-  rename(TeamPFR = Team)
+#age <- pfr_pre2020_stats %>% 
+#  select(Player, Age, Team, Games) %>% 
+#  rename(TeamPFR = Team)
 
 raw_data <- raw_data %>% 
-  filter(!duplicated(Player)) %>% 
+#  filter(!duplicated(Player)) %>% 
   #full_join(age, by = c("Player", "Team")) %>% 
-  full_join(age, by = "Player") %>% 
+#  full_join(age, by = "Player") %>% 
   rename(fppg = `FP/G`) %>% 
-  select(Player, Team, Position, Rk, Age, FPts, fppg, Status)
+  select(Player, Team, Position, Rk, #Age, 
+         FPts, fppg, Status)
 ```
 
 # BEST OVERALL RANKINGS 
@@ -50,19 +50,19 @@ raw_data %>%
 ```
 ```{r top_rankings_WRs }
 raw_data %>% 
-  filter(Position == "WR" & Status == "FA") %>% 
+  filter(Position == "LB" ) %>% 
   arrange(-fppg)
 ```
 
 ## BEST AVAILABLE (REMOVES DRAFTED PLAYERS AT POSITION, FILTERS TOP-10 FOR POSITION)
 
 ```{r best_av_qb}
-drafted_QBs <- "Lamar Jackson"
+drafted_QBs <- "Jameis Winston"
 best_av_qb <- raw_data %>% 
   filter(Position == "QB" & FPts > 70) %>% 
   filter(Status == "FA") %>% 
   filter(!grepl(drafted_QBs, Player)) %>% 
-  top_n(20, fppg) %>% 
+  #top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_qb$FPts); sd(best_av_qb$FPts)   
@@ -75,19 +75,19 @@ best_av_rb <- raw_data %>%
   filter(Position == "RB" & FPts > 70) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_RBs, Player)) %>% 
-  top_n(20, fppg) %>% 
+  #top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_rb$FPts); sd(best_av_rb$FPts)   
 mean(best_av_rb$fppg); sd(best_av_rb$fppg); best_av_rb   
 #```
 #```{r best_av_wr}
-drafted_WRs <- "Michael Thomas|DeAndre Hopkins|Tyreek Hill|Chris Godwin|Cooper Kupp|Davante Adams|Stefon Diggs|Odell Beckham Jr.|Mike Evans|DJ Moore|Amari Cooper|Kenny Golladay"
+drafted_WRs <- "Julian Edelman"
 best_av_wr <- raw_data %>% 
   filter(Position == "WR" & FPts > 20) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_WRs, Player)) %>% 
-  top_n(20, fppg) %>% 
+  #top_n(20, fppg) %>% 
   arrange(-fppg)
 mean(best_av_wr$FPts); sd(best_av_wr$FPts)   
 mean(best_av_wr$fppg); sd(best_av_wr$fppg); best_av_wr   
@@ -98,7 +98,7 @@ best_av_te <- raw_data %>%
   filter(Position == "TE") %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_TEs, Player)) %>% 
-  top_n(20, fppg) %>%
+  #top_n(20, fppg) %>%
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_te$FPts); sd(best_av_te$FPts)   
@@ -109,9 +109,9 @@ defensive_positions <- "DT|DE|LB|CB"
 drafted_DEF <- "No Names Yet"
 best_av_def <- raw_data %>% 
   filter(grepl(defensive_positions, Position)) %>% 
-  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA" | Status == "W (Wed)" ) %>%
   filter(!grepl(drafted_DEF, Player)) %>% 
-  top_n(20, fppg) %>% 
+  #top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_def$FPts); sd(best_av_def$FPts)   
@@ -121,9 +121,9 @@ drafted_LB <- "No Names Yet"
 best_av_lb <- raw_data %>% 
   filter(grepl("LB", Position)) %>%
   #filter(grepl(defensive_positions, Position)) %>%
-  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA" | Status == "W (Wed)" ) %>%
   #filter(!grepl(drafted_LB, Player)) %>% 
-  top_n(20, FPts) %>% 
+  #top_n(20, FPts) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_lb$FPts); sd(best_av_lb$FPts)   
@@ -133,20 +133,20 @@ drafted_CB <- "No Names Yet"
 best_av_cb <- raw_data %>% 
   filter(grepl("CB", Position)) %>%
   #filter(grepl(defensive_positions, Position)) %>% 
-  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA" | Status == "W (Wed)" ) %>%
   filter(!grepl(drafted_CB, Player)) %>% 
-  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
+  #top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_cb$FPts); sd(best_av_cb$FPts)   
 mean(best_av_cb$fppg); sd(best_av_cb$fppg); best_av_cb
 
-drafted_S <- "No Names Yet"
+drafted_S <- "Eric Reid"
 best_av_sfty <- raw_data %>% 
   filter(grepl("S", Position)) %>%
   #filter(grepl(defensive_positions, Position)) %>% 
-  filter(Status == "FA" | Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA" | Status == "W (Wed)" ) %>%
   filter(!grepl(drafted_S, Player)) %>% 
-  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
+  #top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_sfty$FPts); sd(best_av_sfty$FPts)   
 mean(best_av_sfty$fppg); sd(best_av_sfty$fppg); best_av_sfty
@@ -155,9 +155,9 @@ drafted_DE <- "No Names Yet"
 best_av_de <- raw_data %>% 
   filter(grepl("DE", Position)) %>%
   #filter(grepl(defensive_positions, Position)) %>% 
-  filter(Status == "FA"| Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA"| Status == "W (Wed)" ) %>%
   filter(!grepl(drafted_DE, Player)) %>% 
-  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
+  #top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_de$FPts); sd(best_av_de$FPts)   
 mean(best_av_de$fppg); sd(best_av_de$fppg); best_av_de
@@ -166,9 +166,9 @@ drafted_DT <- "No Names Yet"
 best_av_dt <- raw_data %>% 
   filter(grepl("DT", Position)) %>%
   #filter(grepl(defensive_positions, Position)) %>% 
-  filter(Status == "FA"| Status == "W (Wed)" | Status == "SF") %>%
+  filter(Status == "FA"| Status == "W (Wed)" ) %>%
   filter(!grepl(drafted_DT, Player)) %>% 
-  top_n(20, fppg) %>% #top_n(10, FPts) %>% 
+  #top_n(20, fppg) %>% #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_dt$FPts); sd(best_av_dt$FPts)   
 mean(best_av_dt$fppg); sd(best_av_dt$fppg); best_av_dt
@@ -180,7 +180,7 @@ best_av_kkr <- raw_data %>%
   filter(Position == "K" & FPts > 100) %>% 
   filter(Status == "FA") %>%
   filter(!grepl(drafted_Kkrs, Player)) %>% 
-  top_n(20, fppg) %>% 
+  #top_n(20, fppg) %>% 
   #top_n(10, FPts) %>% 
   arrange(-fppg)
 mean(best_av_kkr$FPts); sd(best_av_kkr$FPts)   
@@ -215,10 +215,9 @@ best_available_sum <- as_tibble(data.frame(
                sd(best_av_cb$fppg), sd(best_av_sfty$fppg),
                sd(best_av_de$fppg), sd(best_av_dt$fppg))))
 best_available_sum %>% arrange(-fppg) 
-```
-This table shows the mean and SD values for the top-10 available positions. The higher the mean, the higher overall contribution that the position will give at this point in the draft. The higher SD, the more potential value is available at the position. This latter claim is based on the assumption that the more variance there is, the more important drafting the position right now is. 
+#```
 
-```{r}
+#```{r}
 for_heatmap <- data.frame(
   "position" = c("QB", "RB", "WR", "TE", "K", "DEF", "LB", "CB", "S", "DE", "DT"),
   "fpts" = c(mean(best_av_qb$FPts), mean(best_av_rb$FPts), 
@@ -244,7 +243,8 @@ for_heatmap <- data.frame(
                sd(best_av_kkr$fppg),
                sd(best_av_def$fppg), sd(best_av_lb$fppg),
                sd(best_av_cb$fppg), sd(best_av_sfty$fppg),
-               sd(best_av_de$fppg), sd(best_av_dt$fppg))) 
+               sd(best_av_de$fppg), sd(best_av_dt$fppg))) %>% filter(position != "QB")
+
 for_heatmap <- for_heatmap %>% 
   mutate(fpts_norm = fpts, fptsSD_norm = fptsSD, fppg_norm = fppg, ffpgSD_norm = ffpgSD) %>% 
   mutate_at(scale, .vars = vars(c("fpts_norm", "fptsSD_norm", "fppg_norm", "ffpgSD_norm"))) %>% 
@@ -271,6 +271,16 @@ melt(for_heatmap) %>%
                           axis.title.y = element_blank()) 
 ```
 
+This table shows the mean and SD values for the top-20 available positions. These means and SDs are normalized on a 0-1 scale so that we can interpret value across positions. While there is an undeveloped theory behind how to interpret and ultimately draft players based on this heatmap, my current logic is that you first need to look to the SD columns to find the overall variance available for the top-20 players at each position. The more yellow in the SD, the more variation in the total output available and thus, in theory, the more important that position should be to draft now. Next, the more yellow we see in the points columns, the more total output the available players will have. If both columns are yellow, you want to draft the best available player at that position. 
+
+Notes: The one thing I did not foresee is that RBs and WRs would be valued earlier in the draft then QBs. For example, I drafted Russell Wilson at 21, but Matthew Stafford (with a higher avg fppg with less games) is still available at 68 (3/22, 10:30). On the other hand, all of the top RBs are completely gone. As of now, I am not convinced this is a huge issue since RB tenure is so highly variable and value could be recuperated through the draft or UFA. There still seems to be quite of value left at the WR position (e.g. Jarvis Landry is still available) - a trend that is bolstered moreover by the deep WR draft class (e.g. Lamb, Jeudy, Ruggs, etc).
+
+```{r bpa_look}
+raw_data %>% 
+  filter(Position != "QB" & Status == "FA" | Status == "W (Wed)") %>% 
+  arrange(-FPts)
+```
+
 # EXISTING VALUE CALCULATORS 
 
 ```{r}
@@ -278,13 +288,14 @@ melt(for_heatmap) %>%
 paid15m <- c("Patrick Mahomes|Christian McCaffrey|Lamar Jackson|Saquon Barkley|Michael Thomas|DeAndre Hopkins|Ezekiel Elliott|Deshaun Watson")
 paid14m <- c("Alvin Kamara|Dalvin Cook|Kyler Murray|Dak Prescott|Josh Allen|Josh Jacobs|Derrick Henry|Joe Mixon")
 paid13m <- c("Nick Chubb|Tyreek Hill|Aaron Jones|Chris Godwin|Russell Wilson|Cooper Kupp|Davante Adams")
-paid12m <- c("Aaron Rodgers|Austin Ekeler|George Kittle")
-paid11m <- c("zczyzcz")
-paid10m <- c("zczyzcz")
-paid9m <- c("zczyzcz")
-paid8m <- c("zczyzcz")
-paid7m <- c("zczyzcz")
-paid6m <- c("zczyzcz")
+paid12m <- c("Aaron Rodgers|Austin Ekeler|George Kittle|Stefon Diggs|Odell Beckham Jr.|Miles Sanders|Carson Wentz|Mike Evans|Leonard Fournette|DJ Moore|Amari Cooper|Kenny Golladay|JuJu Smith-Schuster|Melvin Gordon III|Baker Mayfield")
+paid11m <- c("A.J. Brown|Darius Leonard|Sam Darnold|Travis Kelce|Devin Singletary|Le'Veon Bell|Julio Jones|Gardner Minshew II")
+paid10m <- c("Courtland Sutton|Chris Carson|Tyler Lockett|Kenyan Drake|Keenan Allen|Kerryon Johnson|Blake Martinez|DK Metcalf")  
+paid9m <- c("Todd Gurley II|Calvin Ridley|James Conner|David Montgomery|Adam Thielen|Darren Waller|Allen Robinson II|DJ Chark Jr.|Mark Andrews|Matt Ryan|Jaylon Smith|Jared Goff|Deebo Samuel|Marquise Brown|Teddy Bridgewater|Jarvis Landry|Evan Engram|Michael Gallup|Terry McLaurin|David Johnson|Austin Hooper|Damien Williams|Robert Woods|Matthew Stafford|Tyler Boyd|Ryan Tannehill|Tremaine Edmunds|Mecole Hardman|DeVante Parker|Zach Ertz|Rashaan Evans|Darius Slayton|Raheem Mostert|Jimmy Garoppolo|Christian Kirk|Tom Brady|Derrius Guice|Diontae Johnson|Darrell Henderson Jr.|Mark Ingram II")
+paid8m <- c("Sony Michel|Fred Warner|Kareem Hunt|Kirk Cousins|Will Fuller V|Ronald Jones II|Danielle Hunter|Bobby Wagner|Alexander Mattison|Jordan Howard|Phillip Lindsay|Joe Schobert|Drew Lock|Mike Williams|Jordan Hicks|T.J. Watt|Cory Littleton|Drew Brees|Derek Carr|Curtis Samuel|Aaron Donald|N'Keal Harry|Roquan Smith|Devin Bush|James White|Devin White|Budda Baker|Noah Fant|T.J. Hockenson|T.Y. Hilton|Zach Cunningham|Robby Anderson")
+paid7m <- c("Dallas Goedert|Germaine Pratt|Preston Williams|Deion Jones|Hunter Henry|Lavonte David|Anthony Walker
+|De'Vondre Campbell|Ben Roethlisberger|Jamal Adams|Leighton Vander Esch|Chandler Jones|Shaq Thompson|O.J. Howard|Eric Kendricks|K.J. Wright|Jerome Baker|Shaquil Barrett|Minkah Fitzpatrick|Jayon Brown|Landon Collins|Tre'Davious White|Nick Bosa|Matt Milano|Hunter Renfrow|Kwon Alexander|Derwin James Jr.|Harold Landry III|Malcolm Brown|Jordan Poyer|Irv Smith Jr.|John Brown")
+paid6m <- c("Will Dissly|Anthony Miller|Christian Kirksey|Tyler Higbee|Hayden Hurst|Myles Garrett|Tarik Cohen|Justin Jackson|Mack Wilson|Khalil Mack|Sterling Shepard|C.J. Mosley|A.J. Green|Emmanuel Sanders|Rashaad Penny|Jonnu Smith|Mike Gesicki|Joey Bosa|Nick Kwiatkoski|John Johnson III|Breshad Perriman|Jabrill Peppers|Jessie Bates III|Tracy Walker|Steven Sims Jr.|Justin Simmons|Jared Cook|Taylor Rapp|Brandin Cooks|Kevin Byard|Maxx Crosby")
 paid5m <- c("zczyzcz")
 paid4m <- c("zczyzcz")
 paid3m <- c("zczyzcz")
@@ -292,9 +303,9 @@ paid2m <- c("zczyzcz")
 paid1m <- c("zczyzcz")
 
 value_matrix <- raw_data %>% 
-  rename(player = Player, ttl_fpts = FPts, fppg = `FP/G`, 
+  rename(player = Player, ttl_fpts = FPts, 
          rank = Rk, position = Position) %>% 
-  select(rank, player, ttl_fpts, fppg) %>% 
+  select(rank, player, ttl_fpts, fppg, Status) %>% 
   # apply contract totals 
   mutate(contract = ifelse(test = str_detect(string = player, 
                      pattern = paid15m), yes = "15", no = NA)) %>% 
@@ -333,22 +344,42 @@ value_matrix <- raw_data %>%
   # standardize values 
   drop_na(fppg_value) %>% 
   #mutate_at(scale, .vars = vars(c("fppg_value"))) %>%
-  mutate(fppg_norm = round((fppg_value-min(fppg_value))/(max(fppg_value)-min(fppg_value)), 3)) %>% 
-  mutate(ttl_fpts_norm = 
+  mutate(fppg_norm = 
+  round((fppg_value-min(fppg_value))/(max(fppg_value)-min(fppg_value)), 3)) %>%
+  mutate(ttl_fpts_norm =
   round((ttl_fpts_value-min(ttl_fpts_value))/(max(ttl_fpts_value)-min(ttl_fpts_value)), 3)) %>% 
   select(-contract) %>% 
   filter(rank < 400) %>%
+  #filter(Status == "NE") %>%
   arrange(-fppg_value); value_matrix
   #arrange(-ttl_fpts_value); value_matrix
 ```
-
 ```{r}
-drafted_players <- unlist(str_split(c(drafted_QBs, drafted_RBs, drafted_WRs, drafted_TEs, drafted_Kkrs, 
-                     drafted_CB, drafted_DE, drafted_DT, drafted_LB, drafted_S), "\\|"))
+
+no_plrs <- value_matrix %>% 
+  group_by(Status) %>% 
+  count() 
+
+value_matrix %>% 
+  group_by(Status) %>% 
+  summarize(totals = sum(ttl_fpts)) %>% 
+  #summarize(totals = sum(fppg)) %>%
+  left_join(no_plrs, by = "Status") %>% 
+  mutate(avg_ffg_pplyr = totals / n) %>% 
+  arrange(-avg_ffg_pplyr) 
+
+```
+
+```{r, fig.height=4}
+drafted_players <- unlist(str_split(c(drafted_QBs, drafted_RBs, drafted_WRs, 
+                                      drafted_TEs, drafted_Kkrs, drafted_CB, 
+                                      drafted_DE, drafted_DT, drafted_LB, drafted_S), "\\|"))
 
 ggplot(melt(value_matrix %>%
-              mutate(player = reorder(player, fppg_norm)) %>%
-              #top_n(30) %>% 
+              #mutate(player = reorder(player, fppg_norm)) %>%
+              #top_n(30, fppg_value) %>% 
+              mutate(player = reorder(player, ttl_fpts_norm)) %>%
+              top_n(40, ttl_fpts_norm) %>% 
               #filter(player %in% drafted_players) %>% 
               #filter(player != drafted_players) %>%
               #filter(rank < 50) %>% 
@@ -363,12 +394,7 @@ ggplot(melt(value_matrix %>%
                           axis.title.y = element_blank()) 
 ```
 
-```{r}
 
-
-
-
-```
 
 
 
