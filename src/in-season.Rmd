@@ -61,18 +61,14 @@ cleaned_data %>%
   theme(axis.title.x = element_blank())
 ```
 ```{r, fig.width=8}
-top_players <- cleaned_data %>% 
-  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
+top_players <- cleaned_data %>% filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
+top_players %>% group_by(sim_team) %>% filter(position == "QB") %>% top_n(1, fppg)
+top_players %>% group_by(sim_team) %>% filter(position == "RB") %>% top_n(2, fppg) 
+top_players %>% group_by(sim_team) %>% filter(position == "WR") %>% top_n(2, fppg)
+top_players %>% group_by(sim_team) %>% filter(position == "TE") %>% top_n(1, fppg)
+top_players %>% group_by(sim_team) %>% 
+  filter(position == "RB" | position == "WR" | position == "TE") %>% top_n(1, fppg)
 
-top_players %>% 
-  filter(sim_team == "JAX")
-  
-
-
-#  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
-#  geom_bar(colour="black", fill="white", stat="identity") +
-#  theme_minimal() +
-#  theme(axis.title.x = element_blank())
 ```
 
 ```{r players_value_rankings}
