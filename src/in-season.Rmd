@@ -46,6 +46,7 @@ cleaned_data <- cleaned_data %>%
 
 ```{r}
 cleaned_data %>% 
+  filter(sim_team == "JAX")
   filter(is.na(y2020) & sim_team != "FA" & sim_team != "W (Wed)" & sim_team != "(N/A)")
 ```
 
@@ -61,14 +62,56 @@ cleaned_data %>%
   theme(axis.title.x = element_blank())
 ```
 ```{r, fig.width=8}
-top_players <- cleaned_data %>% filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
-top_players %>% group_by(sim_team) %>% filter(position == "QB") %>% top_n(1, fppg)
-top_players %>% group_by(sim_team) %>% filter(position == "RB") %>% top_n(2, fppg) 
-top_players %>% group_by(sim_team) %>% filter(position == "WR") %>% top_n(2, fppg)
-top_players %>% group_by(sim_team) %>% filter(position == "TE") %>% top_n(1, fppg)
-top_players %>% group_by(sim_team) %>% 
-  filter(position == "RB" | position == "WR" | position == "TE") %>% top_n(1, fppg)
-
+eligible_players <- cleaned_data %>% filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
+# top offensive players for each team 
+top_QBs <- eligible_players %>% group_by(sim_team) %>% filter(position == "QB") %>% 
+  top_n(1, FPts) %>% top_n(1, bye) %>% filter(FPts != 0)
+top_RBs <- eligible_players %>% group_by(sim_team) %>% filter(position == "RB") %>% 
+  top_n(2, FPts) %>% top_n(2, bye) %>% filter(FPts != 0)
+top_WRs <- eligible_players %>% group_by(sim_team) %>% filter(position == "WR") %>% 
+  top_n(2, FPts) %>% top_n(2, bye) %>% filter(FPts != 0)
+top_TEs <- eligible_players %>% group_by(sim_team) %>% filter(position == "TE") %>% 
+  top_n(1, FPts) %>% top_n(1, bye) %>% filter(FPts != 0)
+top_offense <- rbind(top_QBs, top_RBs, top_WRs, top_TEs)
+top_players <- paste(c("\\b(?i)(zq3", na.omit(top_offense$player), "zq3)\\b"), collapse = "|")
+top_off_flex <- eligible_players %>% 
+  group_by(sim_team) %>% 
+  filter(!grepl(top_players, player)) %>% 
+  filter(position == "RB" | position == "WR" | position == "TE") %>% 
+  top_n(1, fppg) %>% top_n(1, bye) %>% filter(FPts != 0)
+top_K <- eligible_players %>% group_by(sim_team) %>% filter(position == "K") %>% top_n(1, FPts) %>% filter(FPts != 0)
+top_offense <- rbind(top_offense, top_off_flex, top_K)
+# top defensive players for each team 
+top_DEs <- eligible_players %>% group_by(sim_team) %>% filter(position == "DE") %>% 
+  top_n(2, FPts) %>% top_n(2, bye) %>% filter(FPts != 0)
+top_DTs <- eligible_players %>% group_by(sim_team) %>% filter(position == "DT") %>% 
+  top_n(1, FPts) %>% top_n(1, bye) %>% filter(FPts != 0)
+top_LBs <- eligible_players %>% group_by(sim_team) %>% filter(position == "LB") %>% 
+  top_n(3, FPts) %>% top_n(3, bye) %>% filter(FPts != 0)
+top_CBs <- eligible_players %>% group_by(sim_team) %>% filter(position == "CB") %>% 
+  top_n(2, FPts) %>% top_n(2, bye) %>% filter(FPts != 0)
+top_Ss <- eligible_players %>% group_by(sim_team) %>% filter(position == "S") %>% 
+  top_n(2, FPts) %>% top_n(2, bye) %>% filter(FPts != 0)
+top_defense <- rbind(top_DEs, top_DTs, top_LBs, top_CBs, top_Ss)
+top_players <- paste(c("\\b(?i)(zq3", na.omit(top_defense$player), "zq3)\\b"), collapse = "|")
+top_def_flex <- eligible_players %>% 
+  group_by(sim_team) %>% 
+  filter(!grepl(top_players, player)) %>% 
+  filter(position == "DE" | position == "DT" | position == "LB" | position == "CB" | position == "S") %>% 
+  top_n(1, fppg) %>% top_n(1, bye) %>% filter(FPts != 0)
+top_defense <- rbind(top_defense, top_def_flex)
+top_lineups <- rbind(top_offense, top_defense)
+top_lineups %>% filter(sim_team == "JAX")
+```
+```{r, fig.width=8}
+top_lineups %>% 
+  group_by(sim_team) %>% 
+  summarize(total = sum(fppg)) %>% 
+  arrange(-total) %>% 
+  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
+  geom_bar(colour="black", fill="white", stat="identity") +
+  theme_minimal() +
+  theme(axis.title.x = element_blank())
 ```
 
 ```{r players_value_rankings}
