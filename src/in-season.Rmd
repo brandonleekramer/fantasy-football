@@ -44,23 +44,6 @@ cleaned_data <- cleaned_data %>%
   mutate(y2020_value = round(fppg/y2020 * 1000000, 4))
 ```
 
-```{r}
-cleaned_data %>% 
-  filter(sim_team == "JAX")
-  filter(is.na(y2020) & sim_team != "FA" & sim_team != "W (Wed)" & sim_team != "(N/A)")
-```
-
-```{r, fig.width=8}
-cleaned_data %>% 
-  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") %>% 
-  group_by(sim_team) %>% 
-  summarize(total = sum(fppg)) %>% 
-  arrange(-total) %>% 
-  ggplot(aes(x= reorder(sim_team, -total), y=total)) +
-  geom_bar(colour="black", fill="white", stat="identity") +
-  theme_minimal() +
-  theme(axis.title.x = element_blank())
-```
 ```{r, fig.width=8}
 eligible_players <- cleaned_data %>% filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") 
 # top offensive players for each team 
@@ -102,28 +85,65 @@ top_def_flex <- eligible_players %>%
 top_defense <- rbind(top_defense, top_def_flex)
 top_lineups <- rbind(top_offense, top_defense)
 top_lineups %>% filter(sim_team == "JAX")
+rm(top_QBs, top_RBs, top_WRs, top_TEs, top_K, top_off_flex, top_players, 
+   top_DEs, top_DTs, top_LBs, top_CBs, top_Ss, top_defense, top_def_flex)
 ```
-```{r, fig.width=8}
+```{r, fig.height=3, fig.width=8}
 top_lineups %>% 
   group_by(sim_team) %>% 
   summarize(total = sum(fppg)) %>% 
   arrange(-total) %>% 
   ggplot(aes(x= reorder(sim_team, -total), y=total)) +
-  geom_bar(colour="black", fill="white", stat="identity") +
+  geom_bar(colour="black", fill="white", stat="identity",
+           width = 0.7, position = position_dodge(width=0.7)) +
   theme_minimal() +
-  theme(axis.title.x = element_blank())
+  theme(text = element_text(size=15), axis.title.x = element_blank())
 ```
-
-```{r players_value_rankings}
-mean(na.omit(cleaned_data$y2020_value))
-
+```{r, fig.height=3, fig.width=8}
+team_totals_all <- cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)" & irl_team != "(N/A)") %>% 
+  group_by(sim_team) %>% summarize(all_points = sum(fppg)) 
+ideal_lineup <- top_lineups %>% group_by(sim_team) %>% summarize(ideal_lineup = sum(fppg))
+left_on_bench <- ideal_lineup %>% 
+  full_join(team_totals_all, by = "sim_team") %>% 
+  mutate(left_on_bench = all_points - ideal_lineup) %>% 
+  arrange(-left_on_bench); left_on_bench; rm(team_totals_all, ideal_lineup)
+left_on_bench %>% 
+  ggplot(aes(x= reorder(sim_team, -left_on_bench), y=left_on_bench)) +
+  geom_bar(colour="black", fill="white", stat="identity",
+           width = 0.7, position = position_dodge(width=0.7)) +
+  theme_minimal() +
+  theme(text = element_text(size=15), axis.title.x = element_blank())
+```
+```{r, fig.height=3, fig.width=8}
+team_value <- cleaned_data %>% 
+  filter(sim_team != "FA" & sim_team != "W (Wed)") %>%
+  drop_na(y2020_value) %>% 
+  group_by(sim_team) %>% 
+  summarize(team_value = sum(y2020_value)) %>% 
+  arrange(-team_value); team_value
+team_value %>% 
+  ggplot(aes(x= reorder(sim_team, -team_value), y=team_value)) +
+  geom_bar(colour="black", fill="white", stat="identity",
+           width = 0.7, position = position_dodge(width=0.7)) +
+  theme_minimal() +
+  theme(text = element_text(size=15), axis.title.x = element_blank())
+```
+```{r, fig.height=3, fig.width=8}
+value <- cleaned_data %>% select(y2020_value) %>% drop_na(y2020_value) %>% arrange(-y2020_value)
+mean(value$y2020_value)
 cleaned_data %>% 
   select(player, sim_team, position, age, fppg, bye, y2020, y2020_value) %>%
   arrange(-y2020_value)
 ```
-
+```{r, fig.height=3, fig.width=8}
+cleaned_data %>% 
+  select(player, sim_team, position, age, fppg, bye, y2020_value, y2020, y2021) %>%
+  filter(sim_team == "NE") %>% 
+  arrange(-y2020_value)
+```
 ```{r value_among_tanking_teams}
-tanking_teams <- "WAS|GBP|MIN|SF"
+tanking_teams <- "WAS|GBP|MIN|SF|DET|SEA|NOLA|NE"
 
 cleaned_data %>% 
   filter(grepl(tanking_teams, sim_team) & 
@@ -146,11 +166,12 @@ worst_teams <- paste(c("\\b(?i)(zq3", na.omit(worst_teams$sim_team), "zq3)\\b"),
 
 cleaned_data %>% 
   filter(grepl(worst_teams, sim_team) & 
-         position == "LB" & # position filter 
+         #position == "LB" & # position filter 
          fppg > 8 &         # points filter
-         age > 23           # age filter
+         age > 23          # age filter
+         & is.na(y2021)
          ) %>% 
-  select(player, sim_team, position, age, fppg, bye, y2020, y2020_value, y2021) %>% 
+  select(player, sim_team, irl_team, position, age, fppg, bye, y2020, y2020_value, y2021) %>% 
   arrange(-y2020_value)
 ```
 
