@@ -147,9 +147,9 @@ tanking_teams <- "WAS|GBP|MIN|SF|DET|SEA|NOLA|NE"
 
 cleaned_data %>% 
   filter(grepl(tanking_teams, sim_team) & 
-         #position == "LB" & # position filter 
-         fppg > 8 &         # points filter
-         age > 23           # age filter
+         position == "RB" & # position filter 
+         fppg > 3         # points filter
+         #age > 23           # age filter
          ) %>% 
   select(player, sim_team, position, age, fppg, bye, y2020, y2020_value, y2021, y2022) %>% 
   arrange(-y2020_value)

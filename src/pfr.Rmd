@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+author: "Brandon L. Kramer"
+date: "11/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(janitor)
+
+# before ingesting your data you have to manually delete 
+# the first row from the pfr data (sorry, its annoying)
+#ingest each week's data with clean_names() from janitor 
+setwd("../data")
+qb_data_week6 <- read_csv("qbactual6.csv") %>% clean_names()
+qb_data_week7 <- read_csv("qbactual7.csv") %>% clean_names()
+rb_data_week6 <- read_csv("rushactual6.csv") %>% clean_names()
+rb_data_week7 <- read_csv("rushactual7.csv") %>% clean_names()
+
+# bind all the data together by position 
+qb_data <- qb_data_week6 %>% 
+  bind_rows(qb_data_week7) %>% 
+  rename(passing_yds = yds,
+         rushing_yds = yds_1)
+rb_data <- rb_data_week6 %>% 
+  bind_rows(rb_data_week7) %>% 
+  rename(rushing_yds = yds)
+rm(qb_data_week6, qb_data_week7, rb_data_week6, rb_data_week7)
+
+# combines data and imputes NAs 
+all_player_data <- qb_data %>% 
+  # combines the rb_data to qb_data
+  bind_rows(rb_data) %>% 
+  # replaces NAs to 0 across all rows 
+  mutate_each(funs(replace(., is.na(.), 0)))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
