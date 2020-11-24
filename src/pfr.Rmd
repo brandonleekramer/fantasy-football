@@ -22,10 +22,12 @@ rb_data_week7 <- read_csv("rushactual7.csv") %>% clean_names()
 qb_data <- qb_data_week6 %>% 
   bind_rows(qb_data_week7) %>% 
   rename(passing_yds = yds,
-         rushing_yds = yds_1)
+         rushing_yds = yds_1,
+         passing_td = td)
 rb_data <- rb_data_week6 %>% 
   bind_rows(rb_data_week7) %>% 
-  rename(rushing_yds = yds)
+  rename(rushing_yds = yds,
+         rushing_td = td)
 rm(qb_data_week6, qb_data_week7, rb_data_week6, rb_data_week7)
 
 # combines data and imputes NAs 
@@ -33,8 +35,22 @@ all_player_data <- qb_data %>%
   # combines the rb_data to qb_data
   bind_rows(rb_data) %>% 
   # replaces NAs to 0 across all rows 
-  mutate_each(funs(replace(., is.na(.), 0)))
+  mutate_each(funs(replace(., is.na(.), 0))) %>% 
+  # rather than creating one column with positions 
+  # i prefer to create binary variables so that you 
+  # can account for players with multiple positions 
+  mutate(qb = grepl("QB", pos),
+         rb = grepl("RB|FB", pos),
+         wr = grepl("WR", pos),
+         te = grepl("TE", pos),
+         fantasy_pts = (passing_yds*0.04+
+                        passing_td-2*int+0.1*
+                        rushing_yds+6*rushing_td+1
+                        # add receiving stuff here 
+         )) 
+  
 ```
+
 
 
 
